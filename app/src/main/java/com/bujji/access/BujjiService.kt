@@ -1,6 +1,8 @@
 package com.bujji.access
 
 import android.accessibilityservice.AccessibilityService
+import android.os.Handler
+import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import java.net.ServerSocket
@@ -12,28 +14,34 @@ class BujjiService : AccessibilityService() {
     override fun onInterrupt() {}
 
     override fun onServiceConnected() {
-        startServer()
+        Handler(Looper.getMainLooper()).post {
+            startServer()
+        }
     }
 
     private fun startServer() {
         thread {
-            val server = ServerSocket(8766)
+            try {
+                val server = ServerSocket(8766)
 
-            while (true) {
-                val client = server.accept()
-                val request = client.getInputStream().bufferedReader().readLine()
+                while (true) {
+                    val client = server.accept()
+                    val request = client.getInputStream().bufferedReader().readLine() ?: ""
 
-                if (request.contains("dump")) {
-                    val text = dumpScreen(rootInActiveWindow)
-                    client.getOutputStream().write(text.toByteArray())
+                    if (request.contains("dump")) {
+                        val text = dumpScreen(rootInActiveWindow)
+                        client.getOutputStream().write(text.toByteArray())
+                    }
+
+                    if (request.contains("click:")) {
+                        val target = request.substringAfter("click:")
+                        clickText(rootInActiveWindow, target)
+                    }
+
+                    client.close()
                 }
-
-                if (request.contains("click:")) {
-                    val target = request.substringAfter("click:")
-                    clickText(rootInActiveWindow, target)
-                }
-
-                client.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -42,7 +50,9 @@ class BujjiService : AccessibilityService() {
         if (node == null) return ""
 
         var result = ""
-        if (node.text != null) result += node.text.toString() + "\n"
+
+        if (node.text != null)
+            result += node.text.toString() + "\n"
 
         for (i in 0 until node.childCount)
             result += dumpScreen(node.getChild(i))
