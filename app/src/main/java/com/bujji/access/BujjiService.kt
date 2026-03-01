@@ -1,10 +1,6 @@
 package com.bujji.access
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
-import android.graphics.Path
-import android.os.Handler
-import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import java.net.ServerSocket
@@ -13,7 +9,6 @@ import kotlin.concurrent.thread
 class BujjiService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-
     override fun onInterrupt() {}
 
     override fun onServiceConnected() {
@@ -47,9 +42,7 @@ class BujjiService : AccessibilityService() {
         if (node == null) return ""
 
         var result = ""
-
-        if (node.text != null)
-            result += node.text.toString() + "\n"
+        if (node.text != null) result += node.text.toString() + "\n"
 
         for (i in 0 until node.childCount)
             result += dumpScreen(node.getChild(i))
